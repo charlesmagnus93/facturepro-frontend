@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/services/api";
 
 import { Client } from "@/types/client";
+
+import { useAuth } from "@/hooks/use-auth";
 
 import ClientCard from "@/components/client-card";
 
@@ -12,41 +16,30 @@ import ClientForm from "@/components/client-form";
 
 export default function ClientsPage() {
 
-    const [clients, setClients] = useState<
-        Client[]
-    >([]);
+    useAuth();
 
-    const [search, setSearch] =
-        useState("");
+    const queryClient = useQueryClient();
 
-    async function fetchClients() {
+    const [search, setSearch] = useState("");
 
-        const response = await api.get(
-            "/clients"
-        );
+    const { data: clients = [] } = useQuery<Client[]>({
+        queryKey: ["clients"],
+        queryFn: async () => {
+            const response = await api.get("/clients");
+            return response.data;
+        },
+    });
 
-        setClients(response.data);
-    }
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => api.delete(`/clients/${id}`),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["clients"] });
+        },
+    });
 
-    async function deleteClient(
-        id: number
-    ) {
-
-        await api.delete(`/clients/${id}`);
-
-        fetchClients();
-    }
-
-    useEffect(() => {
-        fetchClients();
-    }, []);
-
-    const filteredClients =
-        clients.filter((client) =>
-            client.name
-                .toLowerCase()
-                .includes(search.toLowerCase())
-        );
+    const filteredClients = clients.filter((client) =>
+        client.name.toLowerCase().includes(search.toLowerCase())
+    );
 
     return (
         <div className="p-10">
@@ -56,11 +49,11 @@ export default function ClientsPage() {
             </h1>
 
             <ClientForm
-                onCreated={fetchClients}
+                onCreated={() => queryClient.invalidateQueries({ queryKey: ["clients"] })}
             />
 
             <input
-                className="border p-3 w-full mb-8"
+                className="border p-3 w-full mb-8 rounded"
                 placeholder="Recherche client..."
                 value={search}
                 onChange={(e) =>
@@ -75,7 +68,7 @@ export default function ClientsPage() {
                     <ClientCard
                         key={client.id}
                         client={client}
-                        onDelete={deleteClient}
+                        onDelete={(id) => deleteMutation.mutate(id)}
                     />
 
                 ))}

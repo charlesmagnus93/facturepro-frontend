@@ -1,40 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { z } from "zod";
 
 import { api } from "@/services/api";
+
+const clientSchema = z.object({
+    name: z.string().min(1, "Le nom est requis"),
+    phone: z.string().optional(),
+    email: z.email("Email invalide").optional().or(z.literal("")),
+    address: z.string().optional(),
+});
+
+type ClientFormData = z.infer<typeof clientSchema>;
 
 type Props = {
     onCreated: () => void;
 };
 
-export default function ClientForm({
-    onCreated
-}: Props) {
+export default function ClientForm({ onCreated }: Props) {
 
-    const [name, setName] = useState("");
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<ClientFormData>({
+        resolver: zodResolver(clientSchema),
+    });
 
-    const [phone, setPhone] = useState("");
-
-    const [email, setEmail] = useState("");
-
-    const [address, setAddress] =
-        useState("");
-
-    async function handleSubmit() {
-
-        await api.post("/clients", {
-            name,
-            phone,
-            email,
-            address
-        });
-
-        setName("");
-        setPhone("");
-        setEmail("");
-        setAddress("");
-
+    async function onSubmit(data: ClientFormData) {
+        await api.post("/clients", data);
+        reset();
         onCreated();
     }
 
@@ -45,52 +45,51 @@ export default function ClientForm({
                 Nouveau Client
             </h2>
 
-            <div className="space-y-3">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+
+                <div>
+                    <input
+                        className="border p-3 w-full rounded"
+                        placeholder="Nom *"
+                        {...register("name")}
+                    />
+                    {errors.name && (
+                        <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                    )}
+                </div>
 
                 <input
-                    className="border p-3 w-full"
-                    placeholder="Nom"
-                    value={name}
-                    onChange={(e) =>
-                        setName(e.target.value)
-                    }
-                />
-
-                <input
-                    className="border p-3 w-full"
+                    className="border p-3 w-full rounded"
                     placeholder="Téléphone"
-                    value={phone}
-                    onChange={(e) =>
-                        setPhone(e.target.value)
-                    }
+                    {...register("phone")}
                 />
 
-                <input
-                    className="border p-3 w-full"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) =>
-                        setEmail(e.target.value)
-                    }
-                />
+                <div>
+                    <input
+                        className="border p-3 w-full rounded"
+                        placeholder="Email"
+                        {...register("email")}
+                    />
+                    {errors.email && (
+                        <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                    )}
+                </div>
 
                 <input
-                    className="border p-3 w-full"
+                    className="border p-3 w-full rounded"
                     placeholder="Adresse"
-                    value={address}
-                    onChange={(e) =>
-                        setAddress(e.target.value)
-                    }
+                    {...register("address")}
                 />
 
                 <button
-                    onClick={handleSubmit}
-                    className="bg-black text-white px-5 py-3 rounded"
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-black text-white px-5 py-3 rounded disabled:opacity-50"
                 >
-                    Ajouter
+                    {isSubmitting ? "Ajout..." : "Ajouter"}
                 </button>
 
-            </div>
+            </form>
 
         </div>
     );
