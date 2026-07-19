@@ -1,11 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
 import { useQuery } from "@tanstack/react-query";
-
 import { api } from "@/services/api";
-
 import InvoiceItemRow from "./invoice-item-row";
 
 type Client = {
@@ -18,7 +15,6 @@ type Props = {
 };
 
 export default function InvoiceForm({ onCreated }: Props) {
-
     const { data: clients = [] } = useQuery<Client[]>({
         queryKey: ["clients"],
         queryFn: async () => {
@@ -28,13 +24,8 @@ export default function InvoiceForm({ onCreated }: Props) {
     });
 
     const [clientId, setClientId] = useState<number>();
-
-    const [items, setItems] = useState([
-        { description: "", quantity: 1, unit_price: 0 }
-    ]);
-
+    const [items, setItems] = useState([{ description: "", quantity: 1, unit_price: 0 }]);
     const [error, setError] = useState("");
-
     const [submitting, setSubmitting] = useState(false);
 
     function addItem() {
@@ -87,60 +78,66 @@ export default function InvoiceForm({ onCreated }: Props) {
     }
 
     return (
-        <div className="border rounded-xl p-6 mb-10">
-
-            <h2 className="text-2xl font-bold mb-5">
-                Nouvelle Facture
-            </h2>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-5">Nouvelle Facture</h2>
 
             {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded mb-4">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-5 text-sm">
                     {error}
                 </div>
             )}
 
-            <select
-                className="border p-3 w-full mb-5 rounded"
-                value={clientId ?? ""}
-                onChange={(e) => setClientId(Number(e.target.value) || undefined)}
-            >
-                <option value="">Choisir un client</option>
-                {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                        {client.name}
-                    </option>
-                ))}
-            </select>
+            <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Client *</label>
+                <select
+                    className="w-full max-w-sm px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={clientId ?? ""}
+                    onChange={(e) => setClientId(Number(e.target.value) || undefined)}
+                >
+                    <option value="">Choisir un client</option>
+                    {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                            {client.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
 
-            {items.map((item, index) => (
-                <InvoiceItemRow
-                    key={index}
-                    item={item}
-                    index={index}
-                    onChange={updateItem}
-                    onRemove={removeItem}
-                />
-            ))}
-
-            <button
-                onClick={addItem}
-                className="bg-gray-200 px-4 py-2 rounded mt-3"
-            >
-                Ajouter Ligne
-            </button>
-
-            <div className="text-2xl font-bold mt-8">
-                Total: {total.toLocaleString()} FCFA
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Lignes de facturation</label>
+                <div className="space-y-3">
+                    {items.map((item, index) => (
+                        <InvoiceItemRow
+                            key={index}
+                            item={item}
+                            index={index}
+                            onChange={updateItem}
+                            onRemove={removeItem}
+                        />
+                    ))}
+                </div>
             </div>
 
             <button
-                onClick={createInvoice}
-                disabled={submitting}
-                className="bg-black text-white px-6 py-3 rounded mt-5 disabled:opacity-50"
+                onClick={addItem}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium mb-6"
             >
-                {submitting ? "Création..." : "Créer Facture"}
+                + Ajouter une ligne
             </button>
 
+            <div className="flex items-center justify-between pt-5 border-t border-gray-100">
+                <p className="text-xl font-bold text-gray-900">
+                    Total: {total.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span>
+                </p>
+
+                <button
+                    onClick={createInvoice}
+                    disabled={submitting}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50"
+                >
+                    {submitting ? "Création..." : "Créer la facture"}
+                </button>
+            </div>
         </div>
     );
 }
